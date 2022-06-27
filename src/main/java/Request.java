@@ -1,6 +1,11 @@
+import org.apache.http.client.utils.URLEncodedUtils;
+
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Request {
 
@@ -9,6 +14,7 @@ public class Request {
     private final String pathString;
     private final String header;
     private final String body;
+    private final List<String> postParams;
 
     public Request(BufferedReader bufferedReader) throws IOException {
         char[] chars = new char[4096];
@@ -23,10 +29,20 @@ public class Request {
         if (method.equals("GET")) {
             this.header = headerAndBody;
             this.body = null;
+            this.postParams = new ArrayList<>();
         } else {
             String[] headerBodyArray = headerAndBody.split("\r\n\r\n");
             this.header = headerBodyArray[0];
-            this.body = headerBodyArray.length > 1 ? headerBodyArray[1] : null;
+            if (headerBodyArray.length > 1) {
+                this.body = headerBodyArray[1];
+                this.postParams = URLEncodedUtils.parse(body, StandardCharsets.UTF_8)
+                        .stream()
+                        .map(Object::toString)
+                        .toList();
+            } else {
+                this.body = null;
+                this.postParams = new ArrayList<>();
+            }
         }
     }
 
@@ -48,5 +64,15 @@ public class Request {
 
     public String getBody() {
         return body;
+    }
+
+    public List<String> getPostParams() {
+        return postParams;
+    }
+
+    public List<String> getPostParam(String name) {
+        return postParams.stream()
+                .filter(x -> x.contains(name))
+                .toList();
     }
 }
