@@ -1,6 +1,15 @@
+import org.apache.http.NameValuePair;
+import org.apache.http.client.utils.URLEncodedUtils;
+
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class Request {
 
@@ -9,15 +18,18 @@ public class Request {
     private final String pathString;
     private final String header;
     private final String body;
+    private final Map<String, String> query = new HashMap<>();
 
-    public Request(BufferedReader bufferedReader) throws IOException {
+    public Request(BufferedReader bufferedReader) throws IOException, URISyntaxException {
         char[] chars = new char[4096];
         int size = bufferedReader.read(chars);
         String request = new String(chars, 0 , size);
         String requestLine = request.split("\r\n")[0];
         String[] info = requestLine.split(" ");
         this.method = info[0];
-        this.pathString = info[1];
+        List<NameValuePair> queryList = URLEncodedUtils.parse(new URI(info[1]), StandardCharsets.UTF_8);
+        queryList.forEach(x -> query.put(x.getName(), x.getValue()));
+        this.pathString = info[1].split("\\?")[0];
         this.path = Path.of(".", "public", pathString);
         String headerAndBody = request.substring(requestLine.length());
         if (method.equals("GET")) {
@@ -48,5 +60,13 @@ public class Request {
 
     public String getBody() {
         return body;
+    }
+
+    public Map<String, String> getQuery() {
+        return query;
+    }
+
+    public String getQueryParam(String name) {
+        return query.get(name);
     }
 }
