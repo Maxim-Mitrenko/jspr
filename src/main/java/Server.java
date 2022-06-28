@@ -1,7 +1,8 @@
+import org.apache.commons.fileupload.FileUploadException;
+
+import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.ConcurrentHashMap;
@@ -30,7 +31,7 @@ public class Server {
 
     private void work(Socket socket) {
         try (socket;
-             final var in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+             final var in = new BufferedInputStream(socket.getInputStream());
              final var out = new BufferedOutputStream(socket.getOutputStream())) {
             Request request = new Request(in);
             Handler handler = handlers.get(request.getMethod() + request.getPathString());
@@ -45,7 +46,7 @@ public class Server {
                 return;
             }
             handler.handle(request, out);
-        } catch (IOException exception) {
+        } catch (IOException | FileUploadException exception) {
             exception.printStackTrace();
         }
     }

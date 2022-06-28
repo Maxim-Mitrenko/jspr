@@ -7,7 +7,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class Main {
 
-    private static final List<String> pathsList = List.of("/index.html", "/spring.svg", "/spring.png", "/resources.html", "/styles.css", "/app.js", "/links.html", "/forms.html", "/events.html", "/events.js");
+    private static final List<String> pathsList = List.of("/index.html", "/spring.svg", "/spring.png", "/resources.html", "/styles.css", "/app.js", "/links.html", "/forms.html", "/events.html", "/events.js", "/default-get.html");
 
     public static void main(String[] args) {
         ConcurrentHashMap<String, Handler> handlers = new ConcurrentHashMap<>();
@@ -46,7 +46,24 @@ public class Main {
                 e.printStackTrace();
             }
         }));
-        handlers.put("POST/forms.html", ((request, out) -> System.out.println(request.getBody())));
+        handlers.put("POST/forms.html", ((request, out) -> System.out.println(request.getFileItemsStrings())));
+        handlers.put("POST/default-get.html", ((request, out) -> {
+            final var content = request.getFileItem("image")
+                    .get(0);
+            try {
+                out.write((
+                        "HTTP/1.1 200 OK\r\n" +
+                                "Content-Type: " + content.getContentType() + "\r\n" +
+                                "Content-Length: " + content.getSize() + "\r\n" +
+                                "Connection: close\r\n" +
+                                "\r\n"
+                ).getBytes());
+                out.write(content.get());
+                out.flush();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }));
         final var server = new Server(handlers);
         server.start(8089);
     }
