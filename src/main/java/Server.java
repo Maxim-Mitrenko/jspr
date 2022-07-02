@@ -9,11 +9,7 @@ import java.util.concurrent.Executors;
 public class Server {
 
     private final ExecutorService executorService = Executors.newFixedThreadPool(64);
-    private final ConcurrentHashMap<String, Handler> handlers;
-
-    public Server(ConcurrentHashMap<String, Handler> handlers) {
-        this.handlers = handlers;
-    }
+    private final ConcurrentHashMap<String, Handler> handlers = new ConcurrentHashMap<>();
 
     public void start(int port) {
         try (final ServerSocket serverSocket = new ServerSocket(port)) {
@@ -51,5 +47,9 @@ public class Server {
         } catch (IOException exception) {
             exception.printStackTrace();
         }
+    }
+
+    public void addHandler(String methodAndPath, Handler handler) {
+        handlers.put(methodAndPath, handler);
     }
 }

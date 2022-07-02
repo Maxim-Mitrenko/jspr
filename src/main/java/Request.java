@@ -12,7 +12,7 @@ public class Request {
     private final String method;
     private final Path path;
     private final String pathString;
-    private final String header;
+    private final String headers;
     private final String body;
     private final List<NameValuePair> postParams;
 
@@ -24,12 +24,12 @@ public class Request {
         this.path = Path.of(".", "public", pathString);
         String headerAndBody = request.substring(requestLine.length());
         if (method.equals("GET")) {
-            this.header = headerAndBody;
+            this.headers = headerAndBody;
             this.body = null;
             this.postParams = new ArrayList<>();
         } else {
             String[] headerBodyArray = headerAndBody.split("\r\n\r\n");
-            this.header = headerBodyArray[0];
+            this.headers = headerBodyArray[0];
             if (headerBodyArray.length > 1) {
                 this.body = headerBodyArray[1];
                 this.postParams = URLEncodedUtils.parse(body, StandardCharsets.UTF_8);
@@ -52,8 +52,8 @@ public class Request {
         return pathString;
     }
 
-    public String getHeader() {
-        return header;
+    public String getHeaders() {
+        return headers;
     }
 
     public String getBody() {
