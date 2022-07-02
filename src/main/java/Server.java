@@ -1,9 +1,7 @@
-import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -30,10 +28,15 @@ public class Server {
 
     private void work(Socket socket) {
         try (socket;
-             final var in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+             final var in = new BufferedInputStream(socket.getInputStream());
              final var out = new BufferedOutputStream(socket.getOutputStream())) {
-            Request request = new Request(in);
-            Handler handler = handlers.get(request.getMethod() + request.getPathString());
+            var bytes = new byte[in.available()];
+            var size = in.read(bytes);
+            if (size == -1) return;
+            var stringRequest = new String(bytes, 0, size, StandardCharsets.UTF_8);
+            if (stringRequest.isEmpty()) return;
+            var request = new Request(stringRequest);
+            var handler = handlers.get(request.getMethod() + request.getPathString());
             if (handler == null) {
                 out.write((
                         "HTTP/1.1 404 Not Found\r\n" +

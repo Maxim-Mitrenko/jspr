@@ -1,6 +1,6 @@
+import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -14,12 +14,9 @@ public class Request {
     private final String pathString;
     private final String header;
     private final String body;
-    private final List<String> postParams;
+    private final List<NameValuePair> postParams;
 
-    public Request(BufferedReader bufferedReader) throws IOException {
-        char[] chars = new char[4096];
-        int size = bufferedReader.read(chars);
-        String request = new String(chars, 0 , size);
+    public Request(String request) throws IOException {
         String requestLine = request.split("\r\n")[0];
         String[] info = requestLine.split(" ");
         this.method = info[0];
@@ -35,10 +32,7 @@ public class Request {
             this.header = headerBodyArray[0];
             if (headerBodyArray.length > 1) {
                 this.body = headerBodyArray[1];
-                this.postParams = URLEncodedUtils.parse(body, StandardCharsets.UTF_8)
-                        .stream()
-                        .map(Object::toString)
-                        .toList();
+                this.postParams = URLEncodedUtils.parse(body, StandardCharsets.UTF_8);
             } else {
                 this.body = null;
                 this.postParams = new ArrayList<>();
@@ -66,13 +60,26 @@ public class Request {
         return body;
     }
 
-    public List<String> getPostParams() {
+    public List<String> getPostParamsString() {
+        return postParams.stream()
+                .map(Object::toString)
+                .toList();
+    }
+
+    public List<String> getPostParamString(String name) {
+        return postParams.stream()
+                .map(Object::toString)
+                .filter(x -> x.contains(name))
+                .toList();
+    }
+
+    public List<NameValuePair> getPostParams() {
         return postParams;
     }
 
-    public List<String> getPostParam(String name) {
+    public List<NameValuePair> getPostParam(String name) {
         return postParams.stream()
-                .filter(x -> x.contains(name))
+                .filter(x -> x.getName().equals(name))
                 .toList();
     }
 }

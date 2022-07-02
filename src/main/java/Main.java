@@ -46,7 +46,7 @@ public class Main {
                throw new RuntimeException(e);
             }
         });
-        Handler post = (request, out) -> System.out.println(request.getPostParams());
+        Handler post = (request, out) -> System.out.println(request.getPostParamsString());
         handlers.put("POST/forms.html", post);
         handlers.put("POST/default-get.html", post);
         final var server = new Server(handlers);
