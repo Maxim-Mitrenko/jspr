@@ -12,11 +12,7 @@ import java.util.concurrent.Executors;
 public class Server {
 
     private final ExecutorService executorService = Executors.newFixedThreadPool(64);
-    private final ConcurrentHashMap<String, Handler> handlers;
-
-    public Server(ConcurrentHashMap<String, Handler> handlers) {
-        this.handlers = handlers;
-    }
+    private final ConcurrentHashMap<String, Handler> handlers = new ConcurrentHashMap<>();
 
     public void start(int port) {
         try (final ServerSocket serverSocket = new ServerSocket(port)) {
@@ -33,7 +29,10 @@ public class Server {
         try (socket;
              final var in = new BufferedInputStream(socket.getInputStream());
              final var out = new BufferedOutputStream(socket.getOutputStream())) {
-            Request request = new Request(in);
+            var bytes = new byte[in.available()];
+            var size = in.read(bytes);
+            if (size == -1 || bytes.length == 0) return;
+            Request request = new Request(bytes, size);
             Handler handler = handlers.get(request.getMethod() + request.getPathString());
             if (handler == null) {
                 out.write((
@@ -49,5 +48,9 @@ public class Server {
         } catch (IOException | FileUploadException exception) {
             exception.printStackTrace();
         }
+    }
+
+    public void addHandler(String methodAndPath, Handler handler) {
+        handlers.put(methodAndPath, handler);
     }
 }
