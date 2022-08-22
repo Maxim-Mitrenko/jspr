@@ -1,3 +1,4 @@
+import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -10,23 +11,7 @@ public class Main {
 
     public static void main(String[] args) {
         final var server = new Server();
-        pathsList.forEach(x -> server.addHandler("GET" + x, ((request, out) -> {
-            try {
-                final var type = Files.probeContentType(request.getPath());
-                final var length = Files.size(request.getPath());
-                out.write((
-                        "HTTP/1.1 200 OK\r\n" +
-                                "Content-Type: " + type + "\r\n" +
-                                "Content-Length: " + length + "\r\n" +
-                                "Connection: close\r\n" +
-                                "\r\n"
-                ).getBytes());
-                Files.copy(request.getPath(), out);
-                out.flush();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        })));
+        pathsList.forEach(x -> server.addHandler("GET" + x, (Main::sendPage)));
         server.addHandler("GET/classic.html", ((request, out) -> {
             try {
                 final var type = Files.probeContentType(request.getPath());
@@ -47,8 +32,10 @@ public class Main {
         }));
         server.addHandler("GET/forms.html", ((request, out) -> {
             if (request.getQuery().isEmpty()) {
+                sendPage(request, out);
+            } else {
                 try {
-                    final var type = Files.probeContentType(request.getPath());
+                    var type = Files.probeContentType(request.getPath());
                     final var length = Files.size(request.getPath());
                     out.write((
                             "HTTP/1.1 200 OK\r\n" +
@@ -57,16 +44,33 @@ public class Main {
                                     "Connection: close\r\n" +
                                     "\r\n"
                     ).getBytes());
-                    Files.copy(request.getPath(), out);
+                    out.write("Form sent!".getBytes(StandardCharsets.UTF_8));
                     out.flush();
+                    System.out.println(request.getQuery());
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
-            } else {
-                System.out.println(request.getQuery());
             }
         }));
         server.addHandler("POST/default-get.html", ((request, out) -> System.out.println(request.getBody())));
         server.start(8089);
+    }
+
+    private static void sendPage(Request request, BufferedOutputStream out) {
+        try {
+            final var type = Files.probeContentType(request.getPath());
+            final var length = Files.size(request.getPath());
+            out.write((
+                    "HTTP/1.1 200 OK\r\n" +
+                            "Content-Type: " + type + "\r\n" +
+                            "Content-Length: " + length + "\r\n" +
+                            "Connection: close\r\n" +
+                            "\r\n"
+            ).getBytes());
+            Files.copy(request.getPath(), out);
+            out.flush();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

@@ -24,9 +24,10 @@ public class Request {
         String requestLine = request.split("\r\n")[0];
         String[] info = requestLine.split(" ");
         this.method = info[0];
-        this.queryList = URLEncodedUtils.parse(new URI(info[1]), StandardCharsets.UTF_8);
+        var url = new URI(info[1]);
+        this.queryList = URLEncodedUtils.parse(url, StandardCharsets.UTF_8);
         queryList.forEach(x -> query.put(x.getName(), x.getValue()));
-        this.pathString = info[1].split("\\?")[0];
+        this.pathString = url.getPath();
         this.path = Path.of(".", "public", pathString);
         String headerAndBody = request.substring(requestLine.length());
         if (method.equals("GET")) {
